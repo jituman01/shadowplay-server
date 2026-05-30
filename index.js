@@ -38,6 +38,12 @@ async function run() {
 
     })
 
+    app.get('/nowStreaming', async (req, res) => {
+     const cursor = moviesCollection.find().limit(8);
+      const result = await cursor.toArray();
+      res.send(result);
+    })
+
     app.get("/movies/:movieId", async(req,res) => {
       const { movieId } = req.params;
       const query = { id: parseInt(movieId) };
