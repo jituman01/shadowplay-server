@@ -27,30 +27,52 @@ async function run() {
     // await client.db("admin").command({ ping: 1 });
 
     const db = client.db("shadowplay");
-  const moviesCollection = db.collection("movies");
+    const moviesCollection = db.collection("movies");
+    const castsCollection = db.collection("casts")
+
+    const getCastsByMovieId = async (movieId) => {
+    const query = { movieId: parseInt(movieId) };
+    return await castsCollection.find(query).toArray();
+    };
 
 
-    app.get("/movies", async(req,res) => {
-     const cursor = moviesCollection.find();
-     const result = await cursor.toArray();
-     // console.log(result);
-     res.send(result);
+    app.get("/movies", async (req, res) => {
+      const cursor = moviesCollection.find();
+      const result = await cursor.toArray();
+      // console.log(result);
+      res.send(result);
 
-    })
+    });
+
+    app.get("/movies/:movieId", async (req, res) => {
+  const { movieId } = req.params;
+  
+  const movie = await moviesCollection.findOne({ id: parseInt(movieId) });
+
+  if (!movie) {
+    return res.status(404).send({ message: "Movie not found" });
+  }
+
+  const casts = await getCastsByMovieId(movieId);
+
+  res.send({
+    ...movie,
+    casts: casts
+  });
+});
+
+
+
+
 
     app.get('/nowStreaming', async (req, res) => {
-     const cursor = moviesCollection.find().limit(8);
+      const cursor = moviesCollection.find().limit(8);
       const result = await cursor.toArray();
       res.send(result);
-    })
+    });
 
-    app.get("/movies/:movieId", async(req,res) => {
-      const { movieId } = req.params;
-      const query = { id: parseInt(movieId) };
-      const result = await moviesCollection.findOne(query);
-      res.send(result);
 
-    })
+    
 
 
 
