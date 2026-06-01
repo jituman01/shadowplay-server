@@ -72,6 +72,12 @@ async function run() {
     });
 
 
+    app.get('/suggestsMovie', async (req, res) => {
+      const cursor = moviesCollection.find().limit(4);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
     
 
 
