@@ -5,6 +5,7 @@ const cors = require('cors');
 dotenv.config();
 const app = express()
 app.use(cors());
+app.use(express.json());
 const port = process.env.PORT || 8080;
 
 
@@ -29,6 +30,7 @@ async function run() {
     const db = client.db("shadowplay");
     const moviesCollection = db.collection("movies");
     const castsCollection = db.collection("casts")
+    const favoritesCollection = db.collection("favorites")
 
     const getCastsByMovieId = async (movieId) => {
     const query = { movieId: parseInt(movieId) };
@@ -77,6 +79,46 @@ async function run() {
       const result = await cursor.toArray();
       res.send(result);
     });
+
+    app.get("/favorite/:userId/:movieId", async (req, res) => {
+  const { userId, movieId } = req.params;
+  const wish = await db.collection("favorites").findOne({ 
+    userId, 
+    movieId: parseInt(movieId) 
+  });
+  res.send({ isLiked: !!wish });
+});
+    
+
+    app.post("/favorite", async (req, res) => {
+  const { userId, movieId } = req.body;
+  const query = { userId, movieId: parseInt(movieId) };
+  
+  const existing = await db.collection("favorites").findOne(query);
+
+  if (existing) {
+    await db.collection("favorites").deleteOne(query);
+    res.send({ isLiked: false });
+  } else {
+    await db.collection("favorites").insertOne(query);
+    res.send({ isLiked: true });
+  }
+});
+
+   app.get("/favorites/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    const favorites = await favoritesCollection.find({ userId }).toArray();
+    const movieIds = favorites.map(item => item.movieId);
+
+    const favoriteMovies = await moviesCollection.find({ id: { $in: movieIds } }).toArray();
+    
+    res.send(favoriteMovies);
+  } catch (error) {
+    res.status(500).send({ message: "Error fetching favorites" });
+  }
+});
 
     
 
